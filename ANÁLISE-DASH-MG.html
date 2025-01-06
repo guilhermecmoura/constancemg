@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card { background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .chart-container { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .data-table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #fff; }
+        .data-table th, .data-table td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        .data-table th { background: #f8f9fa; }
+        .data-table tr:nth-child(even) { background: #f8f9fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Análise Completa de Redução de Prazos e Custos de Frete</h1>
+        </div>
+
+        <div class="summary-cards">
+            <div class="card">
+                <h3>Redução Média</h3>
+                <p>2.5 dias</p>
+            </div>
+            <div class="card">
+                <h3>Total de Lojas</h3>
+                <p>33</p>
+            </div>
+            <div class="card">
+                <h3>Total Faturado</h3>
+                <p>R$ 8.381.735,51</p>
+            </div>
+            <div class="card">
+                <h3>Economia Total</h3>
+                <p>R$ 108.662,01</p>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="deliveryTimeChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="freightCostChart"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="savingsChart"></canvas>
+        </div>
+
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Loja</th>
+                    <th>Cidade-UF</th>
+                    <th>Prazo Antigo</th>
+                    <th>Novo Prazo</th>
+                    <th>Redução</th>
+                    <th>Total Faturado</th>
+                    <th>Total Frete</th>
+                    <th>Economia</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        const data = [
+            {cidade: "SETE LAGOAS-MG", prazoAntigo: 3, novoPrazo: 2, reducao: 1, totalFaturado: 141607.00, totalFrete: 4191.57, economia: 1316.95},
+            {cidade: "MONTES CLAROS-MG", prazoAntigo: 3, novoPrazo: 2, reducao: 1, totalFaturado: 1452063.16, totalFrete: 43707.10, economia: 14375.43},
+            {cidade: "ARAGUARI-MG", prazoAntigo: 6, novoPrazo: 3, reducao: 3, totalFaturado: 190804.59, totalFrete: 10188.97, economia: 5800.46},
+            {cidade: "ITABIRA-MG", prazoAntigo: 4, novoPrazo: 2, reducao: 2, totalFaturado: 189266.70, totalFrete: 5772.63, economia: 1514.13},
+            {cidade: "VARGINHA-MG", prazoAntigo: 4, novoPrazo: 2, reducao: 2, totalFaturado: 389739.07, totalFrete: 17655.18, economia: 8691.18},
+            {cidade: "BARBACENA-MG", prazoAntigo: 5, novoPrazo: 2, reducao: 3, totalFaturado: 241777.30, totalFrete: 8123.72, economia: 2852.97},
+            {cidade: "CURVELO-MG", prazoAntigo: 3, novoPrazo: 2, reducao: 1, totalFaturado: 274023.35, totalFrete: 10111.46, economia: 3808.92},
+            {cidade: "IPATINGA-MG", prazoAntigo: 5, novoPrazo: 2, reducao: 3, totalFaturado: 1161793.15, totalFrete: 33808.18, economia: 7551.66},
+            {cidade: "PATOS DE MINAS-MG", prazoAntigo: 5, novoPrazo: 2, reducao: 3, totalFaturado: 240151.45, totalFrete: 15681.89, economia: 10062.35},
+            {cidade: "TAIOBEIRAS-MG", prazoAntigo: 6, novoPrazo: 3, reducao: 3, totalFaturado: 164895.51, totalFrete: 5062.29, economia: 1352.14},
+            {cidade: "POÇOS DE CALDAS-MG", prazoAntigo: 6, novoPrazo: 2, reducao: 4, totalFaturado: 246266.05, totalFrete: 8003.65, economia: 2438.03},
+            {cidade: "VIÇOSA-MG", prazoAntigo: 5, novoPrazo: 2, reducao: 3, totalFaturado: 136216.71, totalFrete: 4467.91, economia: 1334.92},
+            {cidade: "TEOFILO OTONI-MG", prazoAntigo: 5, novoPrazo: 2, reducao: 3, totalFaturado: 474117.49, totalFrete: 13038.23, economia: 2133.53},
+            {cidade: "CONSELHEIRO LAFAIETE-MG", prazoAntigo: 3, novoPrazo: 2, reducao: 1, totalFaturado: 200780.95, totalFrete: 7047.41, economia: 2429.45}
+        ];
+
+        // Populate table
+        const tableBody = document.getElementById('tableBody');
+        data.forEach((item, index) => {
+            const row = tableBody.insertRow();
+            row.insertCell(0).textContent = index + 1;
+            row.insertCell(1).textContent = item.cidade;
+            row.insertCell(2).textContent = item.prazoAntigo;
+            row.insertCell(3).textContent = item.novoPrazo;
+            row.insertCell(4).textContent = item.reducao;
+            row.insertCell(5).textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.totalFaturado);
+            row.insertCell(6).textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.totalFrete);
+            row.insertCell(7).textContent = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.economia);
+        });
+
+        // Delivery Time Chart
+        new Chart(document.getElementById('deliveryTimeChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(item => item.cidade),
+                datasets: [{
+                    label: 'Prazo Antigo',
+                    data: data.map(item => item.prazoAntigo),
+                    backgroundColor: '#4C72B0'
+                }, {
+                    label: 'Novo Prazo',
+                    data: data.map(item => item.novoPrazo),
+                    backgroundColor: '#55A868'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Comparação de Prazos de Entrega'
+                    }
+                }
+            }
+        });
+
+        // Freight Cost Chart
+        new Chart(document.getElementById('freightCostChart'), {
+            type: 'line',
+            data: {
+                labels: data.map(item => item.cidade),
+                datasets: [{
+                    label: 'Total Frete',
+                    data: data.map(item => item.totalFrete),
+                    borderColor: '#C44E52',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Custos de Frete por Cidade'
+                    }
+                }
+            }
+        });
+
+        // Savings Chart
+        new Chart(document.getElementById('savingsChart'), {
+            type: 'bar',
+            data: {
+                labels: data.map(item => item.cidade),
+                datasets: [{
+                    label: 'Economia',
+                    data: data.map(item => item.economia),
+                    backgroundColor: '#8172B3'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Economia por Cidade'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
